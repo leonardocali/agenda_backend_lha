@@ -1,0 +1,7 @@
+POST https://api-agenda-lha.onrender.com/api/persons/ HTTP/1.1
+Content-Type: application/json
+
+{
+    "number": "3005556612",
+    "name": "Pepito Perez Paz"
+}
