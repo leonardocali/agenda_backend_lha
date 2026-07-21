@@ -18,7 +18,7 @@ morgan.token('body', (req) => {
 
 const app = express();
 
-app.use(cors({origin: ['http://localhost:5173', 'http://192.168.80.73:5173']}));
+app.use(cors({origin: ['http://localhost:5173', 'http://192.168.80.73:5173', 'https://api-agenda-lha.onrender.com']}));
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
