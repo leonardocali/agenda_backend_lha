@@ -1,0 +1,7 @@
+PATCH  http://localhost:3001/api/persons/5 
+Content-Type: application/json
+
+{
+    "number": "3172985011",
+    "name": "Leonardo Herrera Alvarado"
+}
