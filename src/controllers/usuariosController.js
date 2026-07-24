@@ -1,18 +1,26 @@
-const path = require('path');
-const fs = require('fs');
-const jsonPath = path.join(__dirname, '../data/userbd.json');
+const path = require("path");
+const fs = require("fs");
+const jsonPath = path.join(__dirname, "../data/userbd.json");
+const { PersonModel } = require("../models/mongo_bd");
+const { log } = require("console");
 
 let requesCont = 0;
 
-const getUserFile = () =>{
-    const archivoRaw = fs.readFileSync(jsonPath, 'utf-8');
-    let users = JSON.parse(archivoRaw);
-    return users;
+const getDataBDMongo = async (req, res) => {
+  try {
+    const persons = await PersonModel.find({});
+    res.status(200).json(persons);
+  } catch (error) {
+    console.error("Error al obtener datos:", error);
+    res
+      .status(500)
+      .json({ message: "Error interno del servidor", error: error.message });
+  }
 };
 
-const getUser = (req, res) => {
+const getUser = async (req, res) => {
   requesCont++;
-  const persons = getUserFile();
+  const persons = await PersonModel.find({});
   res.json(persons);
 };
 
@@ -22,24 +30,23 @@ const getInfo = (req, res) => {
   res.send(`Phonebook has info for ${requesCont} people \n${dateUp}`);
 };
 
-const getUserByID = (req, res) => {
-  const id = Number(req.params.id);
-  const person = getUserFile().find((per) => per.id === id);
-  if (person) {
-    res.json(person);
+const getUserByID = async (req, res) => {
+  const id = await PersonModel.findById(req.params.id);
+  if (id) {
+    res.json(id);
   } else {
-     res.json('Error user not found')
+    res.json("Error user not found");
   }
 };
 
-const deletePersonByID = (req, res) => {
-  const id = Number(req.params.id);
-  persons = getUserFile().filter((person) => person.id !== id);
-  fs.writeFileSync(jsonPath, JSON.stringify(persons, null, 2), 'utf-8'); 
+const deletePersonByID = async (req, res) => {
+  const id = req.params.id;
+  const personDelete = await PersonModel.findByIdAndDelete(id);
+  const persons = await PersonModel.find({});
   res.json(persons);
 };
 
-const addPerson = (req, res) => {
+const addPerson = async (req, res) => {
   const body = req.body;
 
   if (!body.name || !body.number) {
@@ -49,50 +56,35 @@ const addPerson = (req, res) => {
   }
 
   if (body.number) {
-    const numberExist = getUserFile().filter(
-      (person) => person.number === body.number,
-    );
+    const existeDocumento = await PersonModel.findOne({ number: body.number });
 
-    console.log("Existe number: ", numberExist);
-
-    if (numberExist.length > 0) {
+    if (existeDocumento) {
       return res.status(400).json({
         error: "number duplicate must be unique",
       });
     }
   }
-  const maxID = getUserFile().length >0 
-    ? Math.max(...getUserFile().map(u => Number(u.id))) 
-    : 0;
 
   const person = {
-    id: maxID + 1,
     name: body.name || "Sin registro dato",
     number: body.number || "000000000",
   };
 
-  usuariosJSON = getUserFile().concat(person);
-  fs.writeFileSync(jsonPath, JSON.stringify(usuariosJSON, null, 2), 'utf-8');
-
-  res.json(getUserFile());
+  const newPerson = await PersonModel.create(person);
+  const persons = await PersonModel.find({});
+  res.json(persons);
 };
 
-const updatePerson = (req, res) =>{
-    
-  const id = Number(req.params.id);
+const updatePerson = async (req, res) => {
+  const id = req.params.id;
   const body = req.body;
-  const personIndex = getUserFile().findIndex(p => p.id === id);
-  const persons  =  getUserFile();
-
-  persons[personIndex] = {
-    ...persons[personIndex],
-    ...body
-  }
-
-  fs.writeFileSync(jsonPath, JSON.stringify(persons, null, 2), 'utf-8');
-  console.log("User update succesfully");
-  
-  res.json(getUserFile()) 
+  const update = await PersonModel.findByIdAndUpdate(
+    id,
+    { number: body.number, name: body.name },
+    { new: true },
+  );
+  const personsupdate = await PersonModel.find({});
+  res.json(personsupdate);
 };
 
 module.exports = {
@@ -101,5 +93,6 @@ module.exports = {
   getUserByID,
   deletePersonByID,
   addPerson,
-  updatePerson
+  updatePerson,
+  getDataBDMongo,
 };
